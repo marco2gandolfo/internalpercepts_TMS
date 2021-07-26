@@ -1,9 +1,11 @@
-function internalpercepts_TMS(subjID, whichset, memorisation)
-% function PTBlearn(subjID, set, memorisation)
-% subjID should be a string e.g. 'P101' % for convenience also add the TMS site with underscore - e.g. 'P101_LO'
-% whichset should be a string 'set1 or 'set2', 
-% memorisation should be a string too, 'memorisation_1', 'memorisation_2'
-% this is a the internalpercepts version for TMS. Built on Octave but eventually will run on Matlab, hopefully
+function PTBlearn(subjID)
+% function PTBlearn(subjID)
+% subjID should be a string e.g. 'P101'
+%
+% this is a demo experiment to help PTB learners
+% type e.g. PTBlearn('P123'); from the workspace
+% press f key if it's a fish, press j key if it's a car!
+% set your text editor to display tabs with width of 4 so the code will look nice
 % this introduces some basic PTB; some design counterbalancing; image loading, manipulation, and presentation; response collection with RT; etc.
 % some limits (for now) - will accept any keypress; will not collect responses during image presentation; randomly picks images on each trial
 % some benefits - all self-contained, depends only on PTB; easy to edit (images, durations, responses, etc); data ready for R;
@@ -14,11 +16,10 @@ function internalpercepts_TMS(subjID, whichset, memorisation)
 % 1.2 PD edits to add "page_screen_output(0)" for Octave
 % 1.3 PD remove redundant windowRect; major update to Screen('Flip') calls to ensure accurate timing; much more detailed recording of timestamps
 
-
 %%%%%%%%%
 % A few lines you might need to edit in order to get underway
 %%%%%%%%%
-rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - change this!
+rootDir = '/home/pss811/Documents/fMRI/PTBlearn/';   			% root directory for the experiment - change this!
 rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
 Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
@@ -46,27 +47,13 @@ WaitSecs(1); 													% Give the display a moment to recover
 %%%%%%%%%
 % Here we set some parameters that are relevant to the experiment 
 %%%%%%%%%
-imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
-theFlips = char('flip', 'flop');                               % the orientations of the images, define matrix with strings, then pick one randomly
-whichFlip = theFlips(randi([1 2]),:);                           % pick either flip or flop
-imageDirFlip = [imageDir whichset '_' whichFlip '/'];           % pick the folder with the random flip of the right set
-thememorisationdir = [imageDirFlip, memorisation, '/'];         % pick the right folder for the memorisation images
-exp_phase_dir = [imageDirFlip, 'test/'];
-miniblocks = char('block1', 'block2', 'block3', 'block4', ...
-'block5', 'block6', 'block7', 'block8'); % the miniblocks
-memocondNames = char('full', 'box', 'foil');					          % the folder names == the prefix of each image name
-
-
-numImages = 4; 												                        % number of pictures in each condition and block
-numBlocks = 8;											                        % how many blocks of 32 trials do I want to test?
-numDurs = 5;                                                % number of fixation durations, to jitter fixation cross durations
-memotestpixDur = 2-0.5;                                     % number of screen frames for target stimuli in the memotestphase
-memophasepixDur = 120;                                      % number of screen frames for the memorisation phase, 2 secs for now
-testphasepixDur = 24;                                       % number of screen frames for the experimental test phase for the target picture
-maskdur = 30;                                               % number of screen frames for the Mask
-
+imageDir = [rootDir 'images/']; 								% the folder where we keep the images
+condNames = char('fish', 'car');								% the folder names == the prefix of each image name
+sideNames = char('left', 'right');								% makes data file easier to read 
+numImages = 40; 												% number of pictures in each condition
+numBlocks = 1; 													% how many blocks of 32 trials do I want to test?
 ctrPoint = [screenRect(3)./2 screenRect(4)./2];					% the point at the middle of the screen
-ctrRect = CenterRect([0 0 800 533], screenRect);				% a rectangle that puts our image at the center of the screen
+ctrRect = CenterRect([0 0 400 400], screenRect);				% a rectangle that puts our image at the center of the screen
 imgPosns{1} = OffsetRect(ctrRect, -250, 0);						% a rectangle that puts our image to the left of centre by 500 pixels
 imgPosns{2} = OffsetRect(ctrRect, 250, 0);						% a rectangle that puts our image to the right of centre by 500 pixels
 pixDurs = [4 10] - 0.5;											% number of screen frames for Short and Long trials; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
@@ -78,41 +65,21 @@ maxRespDur = 1.5;												% timeout for the response (in seconds, not frames,
 % "images" will be a 2 (condition) x 40 (image) matrix of numbers
 % each one will be a pointer to a texture that holds one of our stimuli
 %%%%%%%%%
-cd(thememorisationdir);
-
-for i = 1:8 % go down into either foil, box or full directory
-  cd(deblank(miniblocks(i,:)));
-  for g = 1:3
-    cd(deblank(memocondNames(g,:)));
-    d = dir('*.jpg');
-    for f = 1:size(d,1)
-      img = imread(d(f).name, 'jpg');
-      fprintf('Loading file %s.\n', d(f).name);
-      images(i,g,f) = Screen('MakeTexture', window, img);  %3 * 8 
-    end
-    cd..
-  end
-  cd..
-end 
-cd..
-clear img;
-
-%% prepare textures for the experimental phase
-
-cd(exp_phase_dir); %navigate to the folder of the expphase images
-for m = 1:8
-  cd(deblank(miniblocks(m,:)));
-  d = dir('*.jpg');
-  for h = 1:size(d,1);
-    img = imread(d(h).name, 'jpg');
-    fprintf('Loading file %s.\n', d(h).name);
-    expimages(d,h) = Screen('MakeTexture', window, img);
-  end
-  cd..
-end
-cd..
-clear img;
-
+cd(imageDir);
+for i = 1:2
+	cd(deblank(condNames(i,:))); 								% go down into either fish or car image directory
+	d = dir('*.jpg'); 											% "d" now holds names etc of all of the jpgs in that folder
+	for f = 1:size(d,1) 										% loop over all of the images
+		fprintf('Loading file %s.\n', d(f).name); 				% for debugging in case something goes wrong; d(f).name is the name of the fth file
+		img = imread(d(f).name, 'jpg'); 						% "img" now holds the jpg image in numerical form as a matrix 
+																% you can do some math on the image data before you make it into a texture
+																% we are starting with colour images that are 400x400x3 (3 colour channels, RGB)
+		img = mean(img, 3); 									% we can make the images grayscale with a little math
+		images(i,f) = Screen('MakeTexture', window, img); 		% builds a 2(condition)x40(picture) matrix of pointers to the offscreen textures for the stimuli
+	end															% end of loop over images
+	cd .. 														% go back up one directory
+end																% end of loop over conditions
+clear img;														% so that this is not saved along with all the data etc.
 
 %%%%%%%%%
 % Now to set up the design
@@ -120,41 +87,16 @@ clear img;
 % (fish/car) x (left/right) x (short/long) = 8 conditions
 % I want to block randomize so that the whole design is counterbalanced over each set 32 trials
 % Build a design matrix:
-% column 1: b1 b2 b3 b4 b5 b6 b7 b8
-% column 2: box foil full
+% column 1: Fish = 1 Car = 2
+% column 2: Left = 1 Right = 2
 % column 3: Short = 1 Long = 2 
 %%%%%%%%%
-memorisation_design = [1 1; 
-                       1 2;
-                       1 3;
-                       2 1;
-                       2 2;
-                       2 3;
-                       3 1;
-                       3 2;
-                       3 3;
-                       4 1;
-                       4 2;
-                       4 3;
-                       5 1;
-                       5 2;
-                       5 3;
-                       6 1;
-                       6 2;
-                       6 3;
-                       7 1;
-                       7 2;
-                       7 3;
-                       8 1;
-                       8 2;
-                       8 3];	% one trial for each combination of levels (paste into the workspace to see it!)
-%oneBlock = repmat(b, 4, 1);										% copy this four times to make one full block of 32 trials
+b = [1 1 1; 1 1 2; 1 2 1; 1 2 2; 2 1 1; 2 1 2; 2 2 1; 2 2 2];	% one trial for each combination of levels (paste into the workspace to see it!)
+oneBlock = repmat(b, 4, 1);										% copy this four times to make one full block of 32 trials
 design = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
 for i = 1:numBlocks												% each chunk of 32 is a randomized, balanced copy of the full design
 	design = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
 end
-
-
 
 %%%%%%%%%
 % Prepare a few final things before starting the trials
@@ -170,7 +112,7 @@ Screen('TextSize', window, 48);									% big font
 Screen('DrawText', window, 'Press a key when ready.', 20, 20);	% draw the ready signal offscreen
 vbl = Screen('Flip', window);									% flip it onscreen
 KbWait; KbReleaseWait;											% hold on until any key is pressed and then released
-experimentStart = GetSecs;			
+experimentStart = GetSecs;										% time stamp the start of the study (more useful for fMRI/ERP)
 
 %%%%%%%%%
 % This is the main loop of the experiment (over trials)
@@ -220,8 +162,6 @@ for t = 1:size(design,1)										% this big loop is for each trial (number of r
 	(imgOffset(t) - imgOnset(t)));								% from Flip's estimates of when the target actually appeared and was then removed							
 end
 
-
-
 %%%%%%%%%
 % Clean up at the end!
 %%%%%%%%%
@@ -243,13 +183,4 @@ newInd = randperm(R)';
 out = zeros(R, C);
 for i = 1:R
   out(i, :) = m(newInd(i), :);
-end
-
-function waitForSpaceBar
-spaceKeyIdx = KbName('space');                          % specify the key to continue the experiment after the break
-[responseTi, keyStateVec] = KbWait;
-KbReleaseWait;                                                                    % hold on until spaceKeyIdx, i.e. space bar, is pressed and then released
-while ~keyStateVec(spaceKeyIdx)                                                   % check the keyboard until the spaceKeyIdx, i.e. space bar, is pressed
-    [~, keyStateVec] = KbWait;
-    KbReleaseWait;
 end
