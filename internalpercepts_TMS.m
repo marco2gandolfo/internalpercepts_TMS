@@ -48,12 +48,13 @@ WaitSecs(1); 													% Give the display a moment to recover
 %%%%%%%%%
 imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
 theFlips = char('flip', 'flop');                                % the orientations of the images, define matrix with strings, then pick one randomly
-whichFlip = theFlips(randi([1 2]),:)                            % pick either flip or flop
+whichFlip = theFlips(randi([1 2]),:);                           % pick either flip or flop
 imageDirFlip = [imageDir whichset '_' whichFlip '/'];           % pick the folder with the random flip of the right set
-condNames = char('fish', 'car');								% the folder names == the prefix of each image name
-sideNames = char('left', 'right');								% makes data file easier to read 
-numImages = 40; 												% number of pictures in each condition
-numBlocks = 1; 													% how many blocks of 32 trials do I want to test?
+thememorisationdir = [imageDirFlip, memorisation, '/'];         % pick the right folder for the memorisation images
+memocondNames = char('full', 'box', 'foil');					          % the folder names == the prefix of each image name
+
+numImages = 32; 												                        % number of pictures in each condition
+numBlocks = 1; 													                        % how many blocks of 32 trials do I want to test?
 ctrPoint = [screenRect(3)./2 screenRect(4)./2];					% the point at the middle of the screen
 ctrRect = CenterRect([0 0 400 400], screenRect);				% a rectangle that puts our image at the center of the screen
 imgPosns{1} = OffsetRect(ctrRect, -250, 0);						% a rectangle that puts our image to the left of centre by 500 pixels
@@ -67,18 +68,17 @@ maxRespDur = 1.5;												% timeout for the response (in seconds, not frames,
 % "images" will be a 2 (condition) x 40 (image) matrix of numbers
 % each one will be a pointer to a texture that holds one of our stimuli
 %%%%%%%%%
-cd(imageDir);
+cd(thememorisationdir);
 for i = 1:2
-	cd(deblank(condNames(i,:))); 								% go down into either fish or car image directory
+	cd(deblank(memocondNames(i,:))); 								% go down into either fish or car image directory
 	d = dir('*.jpg'); 											% "d" now holds names etc of all of the jpgs in that folder
-	for f = 1:size(d,1) 										% loop over all of the images
-		fprintf('Loading file %s.\n', d(f).name); 				% for debugging in case something goes wrong; d(f).name is the name of the fth file
+  for f = 1:size(d,1) 										% loop over all of the images
+    fprintf('Loading file %s.\n', d(f).name); 				% for debugging in case something goes wrong; d(f).name is the name of the fth file
 		img = imread(d(f).name, 'jpg'); 						% "img" now holds the jpg image in numerical form as a matrix 
-																% you can do some math on the image data before you make it into a texture
-																% we are starting with colour images that are 400x400x3 (3 colour channels, RGB)
-		img = mean(img, 3); 									% we can make the images grayscale with a little math
-		images(i,f) = Screen('MakeTexture', window, img); 		% builds a 2(condition)x40(picture) matrix of pointers to the offscreen textures for the stimuli
-	end															% end of loop over images
+																                % you can do some math on the image data before you make it into a texture
+																                % we are starting with colour images that are 400x400x3 (3 colour channels, RGB)
+		images(i,f) = Screen('MakeTexture', window, img); 		% builds a 3(condition)x32(picture) matrix of pointers to the offscreen textures for the stimuli
+  end															% end of loop over images
 	cd .. 														% go back up one directory
 end																% end of loop over conditions
 clear img;														% so that this is not saved along with all the data etc.
@@ -98,4 +98,46 @@ oneBlock = repmat(b, 4, 1);										% copy this four times to make one full blo
 design = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
 for i = 1:numBlocks												% each chunk of 32 is a randomized, balanced copy of the full design
 	design = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
+end
+
+
+
+%%%%%%%%%
+% Prepare a few final things before starting the trials
+%%%%%%%%%
+keys = zeros(size(design,1), 1);								% vector to hold the keycodes for keypress responses
+RTs = zeros(size(design,1), 1);									% vector to hold the response times
+acc = zeros(size(design,1), 1);									% vector to hold accuracy variable (1=correct, 0=incorrect)
+cd(rootDir);													% change to the main experiment directory
+fout = fopen([subjID '_PTBlearn_' datestr(now, 30) '.txt'],'w');% open a text file to write out data - one line per trial
+Screen('FillRect', window, 128);								% grey background
+Screen('TextColor', window, [0 0 0]);							% black text
+Screen('TextSize', window, 48);									% big font
+Screen('DrawText', window, 'Press a key when ready.', 20, 20);	% draw the ready signal offscreen
+vbl = Screen('Flip', window);									% flip it onscreen
+KbWait; KbReleaseWait;											% hold on until any key is pressed and then released
+experimentStart = GetSecs;			
+
+
+%%%%%%%%%
+% Clean up at the end!
+%%%%%%%%%
+experimentEnd = GetSecs;										% time stamp the end of the study (more useful for fMRI/ERP?)
+Screen('CloseAll');												% close all the offscreen and onscreen windows
+ShowCursor;														% guess what?
+ListenChar(0);                                                  % reinsates the output of key presses to the command window/editor
+fclose(fout);													% close off the data text file
+save([subjID '_PTBlearn_' datestr(now, 30) '.mat'], '-v7');		% all of the variables are saved in a .mat file; datestamp stops overwriting; '-v7' helps Octave read it
+fprintf('%d misses on key Flip commands.\n', sum(sum(mis>0)));  % based on the "miss" output variable from Flip, on target onset + target offset
+
+%%%%%%%%%
+% A helper function: it randomizes the rows of 2D matrix m, keeping each row intact
+%%%%%%%%%
+function out = dt_randomize(m)									
+% function out = dt_randomize(m)
+[R C] = size(m);
+newInd = randperm(R)';
+out = zeros(R, C);
+for i = 1:R
+  out(i, :) = m(newInd(i), :);
 end
