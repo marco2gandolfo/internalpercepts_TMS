@@ -18,7 +18,8 @@ function internalpercepts_TMS(subjID, whichset, memorisation)
 %%%%%%%%%
 % A few lines you might need to edit in order to get underway
 %%%%%%%%%
-rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - change this!
+%rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
+rootDir = '~/Documents/internalpercepts_TMS/';    	% root directory for the experiment - Mac
 rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
 Screen('Preference', 'SkipSyncTests', 1); 						% set to 1 for debugging, 0 when doing real testing
@@ -150,9 +151,9 @@ memorisation_design = [1 1;
                        8 3];	% one trial for each combination of levels (paste into the workspace to see it!)
 memorisation_list = repmat(memorisation_design, 4, 1); % copy this four times to make one full block of 32 trials
 sortmemolist = sortrows(memorisation_list, [1 2]);										
-%memorisation_design = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
+memorisation_randlist = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
 for i = 1:numBlocks												% each chunk of 32 is a randomized, balanced copy of the full design
-	design = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
+	memorisation_randlist = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
 end
 
 
@@ -238,13 +239,13 @@ fprintf('%d misses on key Flip commands.\n', sum(sum(mis>0)));  % based on the "
 % A helper function: it randomizes the rows of 2D matrix m, keeping each row intact
 %%%%%%%%%
 function out = dt_randomize(m)									
-% function out = dt_randomize(m)
-[R C] = size(m);
-newInd = randperm(R)';
-out = zeros(R, C);
-for i = 1:R
-  out(i, :) = m(newInd(i), :);
-end
+  % function out = dt_randomize(m)
+  [R C] = size(m);
+  newInd = randperm(R)';
+  out = zeros(R, C);
+  for i = 1:R
+    out(i, :) = m(newInd(i), :);
+  end
 
 function waitForSpaceBar
 spaceKeyIdx = KbName('space');                          % specify the key to continue the experiment after the break
