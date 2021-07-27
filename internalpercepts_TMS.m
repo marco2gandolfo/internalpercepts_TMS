@@ -21,7 +21,7 @@ function internalpercepts_TMS(subjID, whichset, memorisation)
 rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - change this!
 rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
-Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
+Screen('Preference', 'SkipSyncTests', 1); 						% set to 1 for debugging, 0 when doing real testing
 KbName('UnifyKeyNames');                                        % see help KbName for more details, basically tries to unify key codes across OS
 theKeyCodes = KbName({'f','j'});                                % get key codes for your keys that you want alternative
 page_screen_output(0, 'local');								% use in Octave to stop less/more from catching text output to the workspace
@@ -32,8 +32,11 @@ page_screen_output(0, 'local');								% use in Octave to stop less/more from ca
 ptbv = PsychtoolboxVersion;										% record the version of PTB that was being used
 scriptVersion = 1.3;											% record the version of this script that is running
 screens = Screen('Screens');									% how many screens do we have?
-screenNumber = max(screens);									% take the last one by default
-[window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
+screenNumber = max(screens);								% take the last one by default
+screenRect = [600 100 1300 700];
+[window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
+
+%[window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
 info = Screen('GetWindowInfo', window); 						% records some technical detail about screen and graphics card
 [ifi, nvalid, stddev] = Screen('GetFlipInterval', window, ...	% ifi is the duration of one screen refresh in sec (inter-frame interval)
 100, 0.00005, 20);												% set up for very rigourous checking; results reported in next lines
@@ -66,12 +69,10 @@ testphasepixDur = 24;                                       % number of screen f
 maskdur = 30;                                               % number of screen frames for the Mask
 
 ctrPoint = [screenRect(3)./2 screenRect(4)./2];					% the point at the middle of the screen
-ctrRect = CenterRect([0 0 800 533], screenRect);				% a rectangle that puts our image at the center of the screen
-imgPosns{1} = OffsetRect(ctrRect, -250, 0);						% a rectangle that puts our image to the left of centre by 500 pixels
-imgPosns{2} = OffsetRect(ctrRect, 250, 0);						% a rectangle that puts our image to the right of centre by 500 pixels
-pixDurs = [4 10] - 0.5;											% number of screen frames for Short and Long trials; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
-fixDur = 30 - 0.5;												% number of screen frames for the Fixation; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
-maxRespDur = 1.5;												% timeout for the response (in seconds, not frames, because for this we use GetSecs rather than frame timing)
+ctrRect = CenterRect([0 0 200 300], screenRect);				% a rectangle that puts our image at the center of the screen
+#pixDurs = [4 10] - 0.5;											% number of screen frames for Short and Long trials; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
+#fixDur = 30 - 0.5;												% number of screen frames for the Fixation; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
+#maxRespDur = 1.5;												% timeout for the response (in seconds, not frames, because for this we use GetSecs rather than frame timing)
 
 %%%%%%%%%
 % Let's load all of the images into offscreen textures
@@ -90,11 +91,11 @@ for i = 1:8 % go down into either foil, box or full directory
       fprintf('Loading file %s.\n', d(f).name);
       images(i,g,f) = Screen('MakeTexture', window, img);  %3 * 8 
     end
-    cd..
+    cd ..
   end
-  cd..
+  cd ..
 end 
-cd..
+cd ..
 clear img;
 
 %% prepare textures for the experimental phase
@@ -106,11 +107,11 @@ for m = 1:8
   for h = 1:size(d,1);
     img = imread(d(h).name, 'jpg');
     fprintf('Loading file %s.\n', d(h).name);
-    expimages(d,h) = Screen('MakeTexture', window, img);
+    expimages(m,h) = Screen('MakeTexture', window, img);
   end
-  cd..
+  cd ..
 end
-cd..
+cd ..
 clear img;
 
 
@@ -122,7 +123,6 @@ clear img;
 % Build a design matrix:
 % column 1: b1 b2 b3 b4 b5 b6 b7 b8
 % column 2: box foil full
-% column 3: Short = 1 Long = 2 
 %%%%%%%%%
 memorisation_design = [1 1; 
                        1 2;
@@ -148,8 +148,9 @@ memorisation_design = [1 1;
                        8 1;
                        8 2;
                        8 3];	% one trial for each combination of levels (paste into the workspace to see it!)
-%oneBlock = repmat(b, 4, 1);										% copy this four times to make one full block of 32 trials
-design = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
+memorisation_list = repmat(memorisation_design, 4, 1); % copy this four times to make one full block of 32 trials
+sortmemolist = sortrows(memorisation_list, [1 2]);										
+%memorisation_design = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
 for i = 1:numBlocks												% each chunk of 32 is a randomized, balanced copy of the full design
 	design = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
 end
