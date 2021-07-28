@@ -18,11 +18,11 @@ function internalpercepts_TMS(subjID, whichset, memorisation)
 %%%%%%%%%
 % A few lines you might need to edit in order to get underway
 %%%%%%%%%
-%rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
-rootDir = '~/Documents/internalpercepts_TMS/';    	% root directory for the experiment - Mac
+rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
+%rootDir = '~/Documents/internalpercepts_TMS/';    	% root directory for the experiment - Mac
 rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
-Screen('Preference', 'SkipSyncTests', 1); 						% set to 1 for debugging, 0 when doing real testing
+Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
 KbName('UnifyKeyNames');                                        % see help KbName for more details, basically tries to unify key codes across OS
 theKeyCodes = KbName({'f','j'});                                % get key codes for your keys that you want alternative
 page_screen_output(0, 'local');								% use in Octave to stop less/more from catching text output to the workspace
@@ -34,7 +34,7 @@ ptbv = PsychtoolboxVersion;										% record the version of PTB that was being 
 scriptVersion = 1.3;											% record the version of this script that is running
 screens = Screen('Screens');									% how many screens do we have?
 screenNumber = max(screens);								% take the last one by default
-screenRect = [600 100 1300 700];
+screenRect = [100 100 600 600];
 [window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
 
 %[window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
@@ -81,8 +81,8 @@ ctrRect = CenterRect([0 0 200 300], screenRect);				% a rectangle that puts our 
 % each one will be a pointer to a texture that holds one of our stimuli
 %%%%%%%%%
 cd(thememorisationdir);
-
-for i = 1:8 % go down into either foil, box or full directory
+%% prepare textures for images, that now will have 3 dimensions, Dim 1 is the block, Dim 2 is the Foil vs box vs full Dim 3 is the imgnumber
+for i = 1:8 % go down into each block directory 
   cd(deblank(miniblocks(i,:)));
   for g = 1:3
     cd(deblank(memocondNames(g,:)));
@@ -115,6 +115,13 @@ end
 cd ..
 clear img;
 
+%% prepare texture for the maskdur
+cd(rootDir);
+
+mask = imread('themask.jpg');
+
+maskTexture = Screen('MakeTexture', window, mask);
+
 
 %%%%%%%%%
 % Now to set up the design
@@ -122,41 +129,24 @@ clear img;
 % (fish/car) x (left/right) x (short/long) = 8 conditions
 % I want to block randomize so that the whole design is counterbalanced over each set 32 trials
 % Build a design matrix:
-% column 1: b1 b2 b3 b4 b5 b6 b7 b8
-% column 2: box foil full
+% 
+% column 1: box foil full
 %%%%%%%%%
-memorisation_design = [1 1; 
-                       1 2;
-                       1 3;
-                       2 1;
-                       2 2;
-                       2 3;
-                       3 1;
-                       3 2;
-                       3 3;
-                       4 1;
-                       4 2;
-                       4 3;
-                       5 1;
-                       5 2;
-                       5 3;
-                       6 1;
-                       6 2;
-                       6 3;
-                       7 1;
-                       7 2;
-                       7 3;
-                       8 1;
-                       8 2;
-                       8 3];	% one trial for each combination of levels (paste into the workspace to see it!)
-memorisation_list = repmat(memorisation_design, 4, 1); % copy this four times to make one full block of 32 trials
-sortmemolist = sortrows(memorisation_list, [1 2]);										
-memorisation_randlist = [];													% now we'll build the whole design out of randomised blocks; start with an empty matrix and add to it
-for i = 1:numBlocks												% each chunk of 32 is a randomized, balanced copy of the full design
-	memorisation_randlist = [design; dt_randomize(oneBlock)];					% now we know what to do for each trial (== each row of "design")
+  cd(rootDir);
+  %%% design for the memorisation phase
+  memorisation_design = [1 2 3]';
+  
+  %% create empty cell array to fill (like an R list or JS object) 
+  memorisation_list = {};
+
+for b = 1:numBlocks
+  
+  memorisation_list{b}= [];
+  for i = 1:4
+    memorisation_list{b} = [memorisation_list{b}; dt_randomize(memorisation_design)];
+  end
+
 end
-
-
 
 %%%%%%%%%
 % Prepare a few final things before starting the trials
