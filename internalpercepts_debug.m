@@ -22,9 +22,9 @@ rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory fo
 %rootDir = '~/Documents/internalpercepts_TMS/';    	% root directory for the experiment - Mac
 rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
-Screen('Preference', 'SkipSyncTests', 1); 						% set to 1 for debugging, 0 when doing real testing
+Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
 KbName('UnifyKeyNames');                                        % see help KbName for more details, basically tries to unify key codes across OS
-theKeyCodes = KbName({'f','j'});                                % get key codes for your keys that you want alternative
+theKeyCodes = KbName({'a','s','d','f','UpArrow','DownArrow'});                                % get key codes for your keys that you want alternative
 page_screen_output(0, 'local');								% use in Octave to stop less/more from catching text output to the workspace
 
 %%%%%%%%%
@@ -34,7 +34,7 @@ ptbv = PsychtoolboxVersion;										% record the version of PTB that was being 
 scriptVersion = 1.3;											% record the version of this script that is running
 screens = Screen('Screens');									% how many screens do we have?
 screenNumber = max(screens);								% take the last one by default
-screenRect = [100 100 600 600];
+%screenRect = [100 100 600 600];
 %[window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
 
 [window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
@@ -46,7 +46,7 @@ ifi = Screen('GetFlipInterval', window);
 fprintf('Refresh interval is %2.5f ms.', ifi*1000);
 #fprintf('samples = %i, std = %2.5f ms\n', nvalid, stddev*1000); % reports the results of the ifi measurements to the workspace
 HideCursor; 													% guess what
-ListenChar(2);                                                  % suppresses the output of key presses to the command window/editor; press Ctrl+C in event of a crash
+ListenChar(2);                        % suppresses the output of key presses to the command window/editor; press Ctrl+C in event of a crash
 WaitSecs(1); 													% Give the display a moment to recover 
 
 %%%%%%%%%
@@ -69,13 +69,16 @@ numDurs = 5;                                                % number of fixation
 memotestpixDur = 2-0.5;                                     % number of screen frames for target stimuli in the memotestphase
 memophasepixDur = 120;                                      % number of screen frames for the memorisation phase, 2 secs for now
 testphasepixDur = 24;                                       % number of screen frames for the experimental test phase for the target picture
-maskdur = 30;                                               % number of screen frames for the Mask
+maskDur = 18;                                               % number of screen frames for the Mask
 
 ctrPoint = [screenRect(3)./2 screenRect(4)./2];					% the point at the middle of the screen
 ctrRect = CenterRect([0 0 200 300], screenRect);				% a rectangle that puts our image at the center of the screen
-pixDurs = [4 10] - 0.5;											% number of screen frames for Short and Long trials; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
-fixDur = 30 - 0.5;												% number of screen frames for the Fixation; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
-maxRespDur = 1.5;												% timeout for the response (in seconds, not frames, because for this we use GetSecs rather than frame timing)
+fixDur = [45 60 90 105 120] - 0.5;												% number of screen frames for the Fixation; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
+maxRespDur = 1;												% timeout for the response (in seconds, not frames, because for this we use GetSecs rather than frame timing)
+memtestpixdur = 2 - 0.5; %% duration of the picture for the memtest in frames
+maxCatRespDur = 3; %% maximum time for categorical response in seconds
+
+
 
 %%%%%%%%%
 % Let's load all of the images into offscreen textures
@@ -86,10 +89,10 @@ cd(thememorisationdir);
 %% prepare textures for images, that now will have 3 dimensions, Dim 1 is the block, Dim 2 is the Foil vs box vs full Dim 3 is the imgnumber
 for i = 1:8 % go down into each block directory 
   cd(deblank(miniblocks(i,:)));
-  for g = 1:3
+  for g = 1:3  %%% full box foil
     cd(deblank(memocondNames(g,:)));
     d = dir('*.jpg');
-    for f = 1:size(d,1)
+    for f = 1:size(d,1) %% category exemplar 1 = person 2 = furniture 3 = car 4 = animal
       img = imread(d(f).name, 'jpg');
       fprintf('Loading file %s.\n', d(f).name);
       images(i,g,f) = Screen('MakeTexture', window, img);  %3 * 8 
@@ -124,6 +127,11 @@ mask = imread('themask.jpg');
 
 maskTexture = Screen('MakeTexture', window, mask);
 
+%% prepare texture for the response screen
+respscreen = imread('bresponsescreen.jpg');
+
+respscreenTexture = Screen('MakeTexture', window, respscreen);
+
 %%%%%%%%%
 % Now to set up the design
 % We will present either a fish or a car, left or right of fixation, brief or longer display duration
@@ -134,16 +142,15 @@ maskTexture = Screen('MakeTexture', window, mask);
 % column 1: box foil full
 %%%%%%%%%
   cd(rootDir);
-  %%% design for the memorisation phase and memorisation test
-  memorisation_design = [1 2 3]';
+  %%% design for the memorisation phase and memorisation test %% Dimension 1 full box foil/ Dimension 2 is category Person Furniture Car Animal
+  memorisation_design = [1 1 ;1 2 ;1 3; 1 4; 2 1; 2 2; 2 3; 2 4; 3 1; 3 2; 3 3; 3 4];
   
   %% create design for memorisation_test SEE tomorrow!! here I have to have 12 images 4 per category
-  memorytest_list = {};
-  for g = 1:numBlocks
+ # memorytest_list = {};
+ # for g = 1:numBlocks
     
-    memorytest_list{g} = [dt_randomize(memorisation_design)];
-    
-   end
+  #  memorytest_list{g} = [dt_randomize(memorisation_design)];
+   #end
     
     
   %% create empty cell array to fill (like an R list or JS object) for the study phase
@@ -152,9 +159,8 @@ maskTexture = Screen('MakeTexture', window, mask);
 for b = 1:numBlocks
   
   memorisation_list{b}= [];
-  for i = 1:4
+ 
     memorisation_list{b} = [memorisation_list{b}; dt_randomize(memorisation_design)];
-  end
 
 end
 
@@ -166,6 +172,13 @@ end
 keys = zeros(size(memorisation_list{1},1), 1);								% vector to hold the keycodes for keypress responses
 RTs = zeros(size(memorisation_list{1},1), 1);							% vector to hold the response times
 acc = zeros(size(memorisation_list{1},1), 1);							% vector to hold accuracy variable (1=correct, 0=incorrect)
+
+catRTs = zeros(size(memorisation_list{1},1),1);
+catkeys = zeros(size(memorisation_list{1},1),1);
+catacc = zeros(size(memorisation_list{1},1),1);
+
+
+
 cd(rootDir);													% change to the main experiment directory
 fout = fopen([subjID '_intpercs_' datestr(now, 30) '.txt'],'w');% open a text file to write out data - one line per trial
 Screen('FillRect', window, 128);								% grey background
@@ -173,6 +186,24 @@ Screen('TextColor', window, [0 0 0]);							% black text
 Screen('TextSize', window, 48);									% big font
 Screen('DrawText', window, 'Press a key when ready.', 20, 20);	% draw the ready signal offscreen
 vbl = Screen('Flip', window);									% flip it onscreen
+
+fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n', ...	    % fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
+    'subjectID', ...													                      % Header for the data output
+    'set', ...
+    'memorisation', ...
+    'flip', ...
+    'block', ...								                                  % category (string, %s)
+    'visibility', ...								                              % orientation (string, %s)
+    'category', ...									                              % direction (string, %s)												                            % keycode of that trial (string, %s)
+    'rt', ...													                              % response time of that trial (string, %s)
+    'acc', ...													                            % accuracy of that trial (string, %s)
+    'catacc', ...
+    'keys', ...
+    'catkeys',
+    'catRTs');
+
+
+
 KbWait; KbReleaseWait;											% hold on until any key is pressed and then released
 experimentStart = GetSecs;			
 
@@ -185,25 +216,30 @@ experimentStart = GetSecs;
 for b = 1:size(memorisation_list,2)
   for t = 1:size(memorisation_list{b},1)
     
-    item(t) = Randi(numImages);
+   
+    %% fixation dot
     Screen('gluDisk', window, 0, ctrPoint(1), ctrPoint(2), 8);  % draw fixation dot (offscreen)
 	  vbl = Screen('Flip', window);	
+    
+    %% drawing the image from the right condition    
     Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
-	images(b, memorisation_list{b}(t,1),item(t)), []);
+	images(b, memorisation_list{b}(t,1),memorisation_list{b}(t,2)), []); % 1st dimension is block, second dimension is full/box/foil 3rd dimension is the exemplar category 1-2-3-4
  [vbl imgOnset(t) fts(t,1) mis(t,1) beam(t,1)] = ...			% (keep track of lots of Flip output)
-	Screen('Flip', window, vbl + (fixDur .* ifi));
- Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
-	maskTexture, []);
-  Screen('Flip', window, ...									% flip again, to replace with a fixation point 
-	vbl + (2 .* ifi)); 
- Screen('gluDisk', window, 0, ctrPoint(1), ctrPoint(2), 8);  % keep a fixation offscreen	
-	[vbl imgOffset(t) fts(t,2) mis(t,2) beam(t,2)] = ...		% (keep track of lots of Flip output)
-	Screen('Flip', window, ...									% flip again, to replace with a fixation point 
-	vbl + (30 .* ifi)); 
+	  %% flip it after 
+  Screen('Flip', window, vbl + (fixDur(randi(length(fixDur))) .* ifi)); %% flip image after a random duration of the cross
+ 
+  %% draw texture of the mask
+ Screen('DrawTexture', window, maskTexture, []);
+ %% flip the mask after 2 frames -- this memtest pixdur indicates the duration of the stimulus
+  Screen('Flip', window, vbl + (memtestpixdur .* ifi)); 
   
-  b 
-  memorisation_list{b}(t,1)
-  item(t)
+  %% Now just have a blank screen where participant can respond
+  
+  Screen('FillRect', window, [128 128 128], []);
+ # [vbl imgOffset(t) fts(t,2) mis(t,2) beam(t,2)] = ...		% (keep track of lots of Flip output)
+	Screen('Flip', window, vbl + (maskDur .* ifi)); 
+ 
+ 
   
   responded = 0; 												% reset the response flag for each trial
       while ((GetSecs - imgOnset(t)) < maxRespDur)				% keep checking for a keypress until the clock runs out
@@ -213,11 +249,68 @@ for b = 1:size(memorisation_list,2)
           responded = 1;										% set the flag - now they have responded (so now we won't take any later keypresses on this trial)
           oneKey = find(keyCode);								% use find to figure out which key(s) they pressed
           keys(t) = oneKey(1);	       % maybe they mashed multiple keys! then just pick one (the first one, in keyCode order)
-          oneKey
+          oneKey;
+          KbReleaseWait; %% hold on until the key is released.
+          break;          
+          
         end
       end
       
+      keys(t)
+      #if memorisation_list{1}(1,1) == 2 & keys(1) == theKeyCodes(5) something like that for present absent question
+      memorisation_list{b}(t,1)
       
+      if (keys(t) == theKeyCodes(memorisation_list{b}(t,1)))					% does the keycode match the right key for this condition
+		      acc(t) = 1;												% if so set accuracy for that trial to 1
+	    end		
+      
+    catresponded = 0;
+      % if memorisation_list visibility is not equal to box and participant pressed up then 
+      if (memorisation_list{b}(t,1) ~= 2 && keys(t) == theKeyCodes(5)) %% if trial is not box and they responded present now let appear the respscreen
+         
+         Screen('DrawTexture', window, respscreenTexture, []);
+         [vbl respOnset(t) fts(t,1) mis(t,1) beam(t,1)] = Screen('Flip', window);
+       
+         respOnset(t)
+      
+         while((GetSecs - respOnset(t)) < maxCatRespDur)
+           [catkeyIsDown, catsecs, keyCode1] = KbCheck;
+          if ~catresponded && catkeyIsDown
+            catresponded = 1;
+            catoneKey = find(keyCode1);
+            catkeys(t) = catoneKey(1);
+            catRTs(t) = GetSecs - respOnset(t);
+            catoneKey
+            break;
+            
+            
+          end
+         end            
+   
+    end
+    
+          if (catkeys(t) == theKeyCodes(memorisation_list{b}(t,2)))					% does the keycode match the right key for this condition
+		      catacc(t) = 1;												% if so set accuracy for that trial to 1
+	        end		
+
+    
+    
+        % Write out the data
+      fprintf(fout, '%s\t%s\t%s\t%s\t%d\t%s\t%d\t%3.3f\t%d\t%d\t%d\t%d\t%3.3f\n', ...	% fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
+          subjID, ...	          % the part in '' is encoded so that each %s, %d, %f is filled with a string, integer, or float from the remaining arguments
+          whichset,
+          memorisation, 
+          whichFlip,
+          miniblocks(b,:), ...                                                     % whichblock -- string
+          memocondNames(memorisation_list{b}(t,1),:), ...								        % whichvisibility full box foil (string, %s) [all separated by tab characters \t]
+          memorisation_list{b}(t,2), ...								                      % category integer -- 1 - Person 2 - Furniture  3 - Car 4 - Animal 
+          RTs(t), ...													                                % response time of that trial (float, %3.3f, 3 digits before and after the decimal)
+          acc(t), ...
+          catacc(t), ...
+          keys(t), ...												                                % keycode of that trial (integer, %d)
+          catkeys(t), ...
+          catRTs(t));
+               
    
   end
 end
@@ -226,4 +319,4 @@ experimentEnd = GetSecs;										                          % time stamp the end
 Screen('CloseAll');												                            % close all the offscreen and onscreen windows
 ShowCursor;														                                % guess what?
 ListenChar(0);         
-
+save([subjID '_internalpercepts_TMS' datestr(now, 30) '.mat'], '-v7');	
