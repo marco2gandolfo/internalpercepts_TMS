@@ -4,15 +4,10 @@ function internalpercepts_debug(subjID, whichset, memorisation)
 % whichset should be a string 'set1 or 'set2', 
 % memorisation should be a string too, 'memorisation_1', 'memorisation_2'
 % this is a the internalpercepts version for TMS. Built on Octave but eventually will run on Matlab, hopefully
-% this introduces some basic PTB; some design counterbalancing; image loading, manipulation, and presentation; response collection with RT; etc.
 % some limits (for now) - will accept any keypress; will not collect responses during image presentation; randomly picks images on each trial
 % some benefits - all self-contained, depends only on PTB; easy to edit (images, durations, responses, etc); data ready for R;
-%
-% tested on [OSX10.13.6 + MatlabR2015b + PTB 3.0.15]; [Xubuntu 16.04 + Octave 4.0.0 + PTB 3.0.14]; [OSX10.13.6 + Matlab2018a + PTB version 3.0.14]
-% 1.0 PED July 17 2019
-% 1.1 JL edits to improve key code identification 
-% 1.2 PD edits to add "page_screen_output(0)" for Octave
-% 1.3 PD remove redundant windowRect; major update to Screen('Flip') calls to ensure accurate timing; much more detailed recording of timestamps
+% To do Randomisation of blocks, Experimental Phase, and TMS Trigger.
+% tested on Octave 6.2.0 and Windows 10; Octave 6.2.0 and OSx
 
 
 %%%%%%%%%
@@ -24,7 +19,7 @@ rand('twister',sum(100*clock)); 								% use this to reset the random number ge
 %rng('shuffle'); 												% use this to reset the random number generator in Matlab
 Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
 KbName('UnifyKeyNames');                                        % see help KbName for more details, basically tries to unify key codes across OS
-theKeyCodes = KbName({'a','s','d','f','UpArrow','DownArrow'});                                % get key codes for your keys that you want alternative
+theKeyCodes = KbName({'a','s','d','f','UpArrow','DownArrow', 'space'});                                % get key codes for your keys that you want alternative
 page_screen_output(0, 'local');								% use in Octave to stop less/more from catching text output to the workspace
 
 %%%%%%%%%
@@ -34,7 +29,7 @@ ptbv = PsychtoolboxVersion;										% record the version of PTB that was being 
 scriptVersion = 1.3;											% record the version of this script that is running
 screens = Screen('Screens');									% how many screens do we have?
 screenNumber = max(screens);								% take the last one by default
-%screenRect = [100 100 600 600];
+%screenRect = [100 100 600 600];            %% uncomment this and next line for small screen for debugging
 %[window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
 
 [window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
@@ -49,9 +44,11 @@ HideCursor; 													% guess what
 ListenChar(2);                        % suppresses the output of key presses to the command window/editor; press Ctrl+C in event of a crash
 WaitSecs(1); 													% Give the display a moment to recover 
 
-%%%%%%%%%
-% Here we set some parameters that are relevant to the experiment 
-%%%%%%%%%
+%%%%%%%%%                                               %%%%%%%%%%
+% Here we set some parameters that are relevant to the experiment% 
+%%%%%%%%%                                               %%%%%%%%%%
+
+
 imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
 theFlips = char('flip', 'flop');                               % the orientations of the images, define matrix with strings, then pick one randomly
 whichFlip = theFlips(randi([1 2]),:);                           % pick either flip or flop
@@ -67,9 +64,10 @@ numImages = 4; 												                        % number of pictures in each 
 numBlocks = 8;											                        % how many blocks of 32 trials do I want to test?
 numDurs = 5;                                                % number of fixation durations, to jitter fixation cross durations
 memotestpixDur = 2-0.5;                                     % number of screen frames for target stimuli in the memotestphase
-memophasepixDur = 120;                                      % number of screen frames for the memorisation phase, 2 secs for now
 testphasepixDur = 24;                                       % number of screen frames for the experimental test phase for the target picture
 maskDur = 18;                                               % number of screen frames for the Mask
+studyphasePixDur = 240; % 4 seconds
+
 
 ctrPoint = [screenRect(3)./2 screenRect(4)./2];					% the point at the middle of the screen
 ctrRect = CenterRect([0 0 200 300], screenRect);				% a rectangle that puts our image at the center of the screen
@@ -80,11 +78,13 @@ maxCatRespDur = 3; %% maximum time for categorical response in seconds
 
 
 
-%%%%%%%%%
-% Let's load all of the images into offscreen textures
-% "images" will be a 2 (condition) x 40 (image) matrix of numbers
-% each one will be a pointer to a texture that holds one of our stimuli
-%%%%%%%%%
+%%%%%%%%%                                             %%%%%%%%%%%%%%%%%%
+% Let's load all of the images into offscreen textures                 %
+% "images" will be for the study phase and the memory test             %
+% "exp images" will be the textures for the experimental phase         %
+% each one will be a pointer to a texture that holds one of our stimuli%
+%%%%%%%%%                                             %%%%%%%%%%%%%%%%%%
+
 cd(thememorisationdir);
 %% prepare textures for images, that now will have 3 dimensions, Dim 1 is the block, Dim 2 is the Foil vs box vs full Dim 3 is the imgnumber
 for i = 1:8 % go down into each block directory 
@@ -132,28 +132,25 @@ respscreen = imread('bresponsescreen.jpg');
 
 respscreenTexture = Screen('MakeTexture', window, respscreen);
 
-%%%%%%%%%
-% Now to set up the design
-% We will present either a fish or a car, left or right of fixation, brief or longer display duration
-% (fish/car) x (left/right) x (short/long) = 8 conditions
-% I want to block randomize so that the whole design is counterbalanced over each set 32 trials
-% Build a design matrix:
-% 
-% column 1: box foil full
-%%%%%%%%%
+%%%%%%%%%                                                                                                                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Now to set up the design                                                                                                                               %
+% In the memorisation test and study phase we will present either a full cue image, a box image and a foil image in 8 blocks. Each of these 3 visibility %
+% conditions will have 4 object categories  Person Furniture Car Animal                                                                                  %
+% we will have for three visibility (full box foil) and 4 categories in the memo phase (1 - Person 2 - Furniture 3 - Car 4 - Animal)                     %
+%                                                                                                                                                        %
+% Build a design matrix:                                                                                                                                 % 
+%                                                                                                                                                        %
+% column 1: full box foil                                                                                                                                % 
+% column 2: Person Furniture Car Animal                                                                                                                  %
+%%%%%%%%%                                                                                                                      %%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
   cd(rootDir);
   %%% design for the memorisation phase and memorisation test %% Dimension 1 full box foil/ Dimension 2 is category Person Furniture Car Animal
   memorisation_design = [1 1 ;1 2 ;1 3; 1 4; 2 1; 2 2; 2 3; 2 4; 3 1; 3 2; 3 3; 3 4];
   
-  %% create design for memorisation_test SEE tomorrow!! here I have to have 12 images 4 per category
- # memorytest_list = {};
- # for g = 1:numBlocks
+ 
     
-  #  memorytest_list{g} = [dt_randomize(memorisation_design)];
-   #end
-    
-    
-  %% create empty cell array to fill (like an R list or JS object) for the study phase
+  %% create empty cell array to fill (like an R list or JS object) for the memorytest phase
   memorisation_list = {};
 
 for b = 1:numBlocks
@@ -164,9 +161,24 @@ for b = 1:numBlocks
 
 end
 
-%%%%%%%%%
-% Prepare a few final things before starting the trials
-%%%%%%%%%
+  %% create empty cell array to fill for the study phase %% SAME design of the memorytest but this has to be randomised
+  studyphase_list = {};
+
+%% now randomise this studyphase list.  
+for b = 1:numBlocks
+  
+  studyphase_list{b} = [];
+    
+    studyphase_list{b} = [studyphase_list{b}; dt_randomize(memorisation_design)];
+    
+end
+
+%%% TO DO create the experimental phase design and then the experimental phase list
+
+
+%%%%%%%%%                                        %%%%%%%
+% Prepare a few final things before starting the trials%
+%%%%%%%%%                                        %%%%%%%   
 
 %% may be  cell(1,:) = zeros(size(memorisation_list{1},1),1) to respect structure of design?
 keys = zeros(size(memorisation_list{1},1), 1);								% vector to hold the keycodes for keypress responses
@@ -187,6 +199,18 @@ Screen('TextSize', window, 48);									% big font
 Screen('DrawText', window, 'Press a key when ready.', 20, 20);	% draw the ready signal offscreen
 vbl = Screen('Flip', window);									% flip it onscreen
 
+%% set the base rectangle for the study phase
+baseRect = [0 0 883 583];
+%% Center this rectangle to Screen Center
+centeredRect = CenterRectOnPointd(baseRect, ctrPoint(1), ctrPoint(2));
+%% red and green color vectors
+redcolor = [255 0 0];
+greencolor = [0 255 0];
+
+ 
+
+
+%% create all the labels for the future datafile, hopefully
 fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n', ...	    % fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
     'subjectID', ...													                      % Header for the data output
     'set', ...
@@ -260,9 +284,13 @@ for b = 1:size(memorisation_list,2)
       #if memorisation_list{1}(1,1) == 2 & keys(1) == theKeyCodes(5) something like that for present absent question
       memorisation_list{b}(t,1)
       
-      if (keys(t) == theKeyCodes(memorisation_list{b}(t,1)))					% does the keycode match the right key for this condition
+      if (memorisation_list{b}(t,1) ~= 2 && keys(t) == theKeyCodes(5))					% If press up (present) and Stimulus is not box
 		      acc(t) = 1;												% if so set accuracy for that trial to 1
-	    end		
+      elseif (memorisation_list{b}(t,1) == 2 && keys(t) == theKeyCodes(6))
+          acc(t) = 1;
+      else
+          acc(t) = 0;    
+      end		
       
     catresponded = 0;
       % if memorisation_list visibility is not equal to box and participant pressed up then 
@@ -313,6 +341,58 @@ for b = 1:size(memorisation_list,2)
                
    
   end
+  
+  %% now we are still inside the block loop, start loop for the study phase.
+  for st = 1:size(studyphase_list{b},1)
+      
+      if st == 1  %% Instruction of the study phase, add FB here if you can
+          DrawFormattedText(window, ...                                    %%instructions
+              'Now you have the chance to study the images to get better! \n Press space to start', ...
+              'wrapat', 40, 0, 50);
+          vbl = Screen('Flip', window);									                     % flip it onscreen
+          waitForSpaceBar;
+      end
+      
+      for crossframe = 1:fixDur(randi(length(fixDur)))
+      
+      %% fixation dot
+      Screen('gluDisk', window, 0, ctrPoint(1), ctrPoint(2), 8);  % draw fixation dot (offscreen)
+      Screen('Flip', window);	
+
+      end
+            
+     
+      
+    while frame < studyphasePixDur
+      
+        if frame < 120
+        
+        Screen('FillRect', window, redcolor, centeredRect);
+        Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
+      images(b, studyphase_list{b}(st,1),studyphase_list{b}(st,2)), []); % 1st dimension is block, second dimension is full/box/foil 3rd dimension is the exemplar category 1-2-3-4
+     
+     [vbl studyimgOnset(st) fts(st,1) mis(st,1) beam(st,1)] = ...			% (keep track of lots of Flip output) 
+      Screen('Flip', window); %% flip image after a random duration of the cross
+        else
+        Screen('FillRect', window, greencolor, centeredRect);
+        Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
+      images(b, studyphase_list{b}(st,1),studyphase_list{b}(st,2)), []); % 1st dimension is block, second dimension is full/box/foil 3rd dimension is the exemplar category 1-2-3-4
+     
+     [vbl studyimgOnset(st) fts(st,1) mis(st,1) beam(st,1)] = ...			% (keep track of lots of Flip output) 
+      Screen('Flip', window); %% flip image after a random duration of the cross
+      
+      [studykeyIsDown, studysecs, keyCodest] = KbCheck;
+             if studykeyIsDown
+                 stoneKey = find(keyCodest);
+                 studykeys(st) = stoneKey(1);
+                 stRTs(st) = GetSecs - studyimgOnset(st);
+                break;
+             end
+        end
+    end
+  end
+
+  
 end
 
 experimentEnd = GetSecs;										                          % time stamp the end of the study (more useful for fMRI/ERP?)
@@ -320,3 +400,12 @@ Screen('CloseAll');												                            % close all the offsc
 ShowCursor;														                                % guess what?
 ListenChar(0);         
 save([subjID '_internalpercepts_TMS' datestr(now, 30) '.mat'], '-v7');	
+
+function waitForSpaceBar
+spaceKeyIdx = KbName('space');                          % specify the key to continue the experiment after the break
+[responseTi, keyStateVec] = KbWait;
+KbReleaseWait;                                                                    % hold on until spaceKeyIdx, i.e. space bar, is pressed and then released
+while ~keyStateVec(spaceKeyIdx)                                                   % check the keyboard until the spaceKeyIdx, i.e. space bar, is pressed
+    [~, keyStateVec] = KbWait;
+    KbReleaseWait;
+end
