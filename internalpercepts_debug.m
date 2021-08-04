@@ -363,7 +363,7 @@ for b = 1:size(memorisation_list,2)
             
      
       
-    while frame < studyphasePixDur
+    for frame = 1:studyphasePixDur
       
         if frame < 120
         
