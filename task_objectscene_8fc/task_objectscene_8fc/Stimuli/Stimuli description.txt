@@ -1,0 +1,20 @@
+First character: Stimulus category - 	A: Airplane
+					B: Bird
+					C: Car
+					F: Fish
+					M: Mammal
+					P: Person
+					S: Ship
+					T: Train
+
+Second character: Stimulus type - 	A: degraded object in scene
+					B: degraded object alone
+					C: intact object alone
+					D: scene alone
+
+Third character: Old or new stimulus - 	N: New
+					O: Old
+
+Fourth and fifth character: number
+
+BBN15: degraded bird alone from the new stimulus set, number 15
