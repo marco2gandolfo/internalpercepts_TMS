@@ -13,8 +13,7 @@ try
   %%%%%%%%%
   % A few lines you might need to edit in order to get underway
   %%%%%%%%%
-  rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
-  %rootDir = '~/Documents/internalpercepts_TMS/';    	% root directory for the experiment - Mac
+  
   rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
   %rng('shuffle'); 												% use this to reset the random number generator in Matlab
   Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
@@ -49,105 +48,18 @@ try
   
   
   %%%%%%%%%                                               %%%%%%%%%%
-  % Here we set some parameters that are relevant to the experiment% 
+  % Here we LOAD parameters that are relevant to the experiment    % 
   %%%%%%%%%                                               %%%%%%%%%%
-
-
-  imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
-  theFlips = char('flip', 'flop');                               % the orientations of the images, define matrix with strings, then pick one randomly
-  whichFlip = theFlips(randi([1 2]),:);                           % pick either flip or flop
-  imageDirFlip = [imageDir whichset '_' whichFlip '/'];           % pick the folder with the random flip of the right set
-  thememorisationdir = [imageDirFlip, memorisation, '/'];         % pick the right folder for the memorisation images
-  exp_phase_dir = [thememorisationdir, 'test/'];
-  miniblocks = char('block1', 'block2', 'block3', 'block4', ...
-  'block5', 'block6', 'block7', 'block8');                        % the miniblocks
-  memocondNames = char('full', 'box', 'foil');					          % the folder names == the prefix of each image name
-  expphaseNames = char('seen', 'not_seen');
-  sh_miniblocks = Shuffle(miniblocks);                            %% shuffle the order of the blocks in which folders will be read
-
-  numImages = 4; 												                        % number of pictures in each condition and block
-  numBlocks = 1;											                        % how many blocks of 32 trials do I want to test?
-  numDurs = 5;                                                % number of fixation durations, to jitter fixation cross durations
-  memotestpixDur = 2-0.5;                                     % number of screen frames for target stimuli in the memotestphase
-  testphasepixDur = 24;                                       % number of screen frames for the experimental test phase for the target picture
-  maskDur = 18;                                               % number of screen frames for the Mask
-  studyphasePixDur = 360;                                     % 6 seconds duration or keypress
-  numStudyReps = 1;                                           % how many times they repeat
-  fixDur = [45 60 90 105 120] - 0.5;												% number of screen frames for the Fixation; subtract 0.5 to compensate for timing jitter (see DriftWaitDemo.m)
-  maxRespDur = 2;												% timeout for the response (in seconds, not frames, because for this we use GetSecs rather than frame timing)
-  memtestpixdur = 2 - 0.5; %% duration of the picture for the memtest in frames
-  maxCatRespDur = 3; %% maximum time for categorical response in seconds
-  expphasepixDur = 21 - 0.5; %% 357 msecs
-  expphaseMaskDur = 6 -0.5; %% 100 ms
   
- 
+  internalpercepts_parameters;
+
+  %%%%%%%%%                                              %%%%%%%%%%%%
+  % LOAD All Images into turbo textures                             %
+  %%%%%%%%%                                              %%%%%%%%%%%%
+
+  internalpercepts_loadimages;
   
-  %% define things for slidescale
-  
-  question  = 'How Well did you see the blurry object?';
-  endPoints = {'Not at all', 'Quite well'};
-
-
-  %%%%%%%%%                                             %%%%%%%%%%%%%%%%%%
-  % Let's load all of the images into offscreen textures                 %
-  % "images" will be for the study phase and the memory test             %
-  % "exp images" will be the textures for the experimental phase         %
-  % each one will be a pointer to a texture that holds one of our stimuli%
-  %%%%%%%%%                                             %%%%%%%%%%%%%%%%%%
-
-  cd(thememorisationdir);
-  memorisation_names = {};
-  %% prepare textures for images, that now will have 3 dimensions, Dim 1 is the block, Dim 2 is the Foil vs box vs full Dim 3 is the imgnumber
-  for i = 1:8 % go down into each block directory 
-    cd(deblank(sh_miniblocks(i,:)));
-    for g = 1:3  %%% full box foil
-      cd(deblank(memocondNames(g,:)));
-      d = dir('*.jpg');
-      for f = 1:size(d,1) %% category exemplar 1 = person 2 = furniture 3 = car 4 = animal
-        img = imread(d(f).name, 'jpg');
-        fprintf('Loading file %s.\n', d(f).name);
-        images(i,g,f) = Screen('MakeTexture', window, img);  %3 * 8 
-      end
-      cd ..
-    end
-    cd ..
-  end 
-  cd ..
-  clear img;
-
-  %% prepare textures for the experimental phase
-
-  cd(exp_phase_dir); %navigate to the folder of the expphase images
-  for m = 1:8
-    cd(deblank(miniblocks(m,:)));
-    for n = 1:2
-      cd(deblank(expphaseNames(n,:))); 
-      d = dir('*.jpg');
-      for h = 1:size(d,1);
-        img = imread(d(h).name, 'jpg');
-        fprintf('Loading file %s.\n', d(h).name);
-        expimages(m, n, h) = Screen('MakeTexture', window, img);
-      end
-    cd ..
-   end
-   cd ..
-  end
-  cd ..
-  clear img;
-
-  %% prepare texture for the maskdur
-  cd(rootDir);
-
-  mask = imread('themask.jpg');
-
-  maskTexture = Screen('MakeTexture', window, mask);
-
-  %% prepare texture for the response screen
-  respscreen = imread('bresponsescreen.jpg');
-
-  respscreenTexture = Screen('MakeTexture', window, respscreen);
-
-  %%%%%%%%%                                                                                                                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%                                                                                                                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Now to set up the design                                                                                                                               %
   % In the memorisation test and study phase we will present either a full cue image, a box image and a foil image in 8 blocks. Each of these 3 visibility %
   % conditions will have 4 object categories  Person Furniture Car Animal                                                                                  %
@@ -156,66 +68,14 @@ try
   % Build a design matrix:                                                                                                                                 % 
   %                                                                                                                                                        %
   % column 1: full box foil                                                                                                                                % 
-  % column 2: Person Furniture Car Animal                                                                                                                  %
+  % column 2: Person Furniture Car Animal      
+  %
+  % In the study phase design is the same. In the experimental phase our design includes for now 2 (seen notseen) x 4 Category (Person furniture car animal)%
+  %  I will probably have to include TMS onset
   %%%%%%%%%                                                                                                                      %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    cd(rootDir);
-    %%% design for the memorisation phase and memorisation test %% Dimension 1 full box foil/ Dimension 2 is category Person Furniture Car Animal
-    memorisation_design = [1 1; 1 2; 1 3; 1 4; 2 1; 2 2; 2 3; 2 4; 3 1; 3 2; 3 3; 3 4];
-    
-   
-      
-    %% create empty cell array to fill (like an R list or JS object) for the memorytest phase
-    memorisation_list = {}; %% empty first memorytest list
-    memorisation_list_2 = {}; %% Empty second memorytest list
-    
-  for b = 1:numBlocks
-    %% an empty vector for each cell
-    memorisation_list{b}= [];
-    memorisation_list_2{b}= [];
-    %% stuff the vectore with randomised list 
-    memorisation_list{b} = [memorisation_list{b}; dt_randomize(memorisation_design)];
-    memorisation_list_2{b} = [memorisation_list_2{b}; dt_randomize(memorisation_design)];
 
-  end
-
-    
-  %% create empty cell array to fill for the study phase %% SAME design of the memorytest but this has to be randomised
-  studyphase_list = {};
-
-  %% now randomise this studyphase list.  
-  for b = 1:numBlocks
-    
-    studyphase_list{b} = [];
-      
-    studyphase_list{b} = [studyphase_list{b}; dt_randomize(memorisation_design)];
-      
-  end
-
-   
-
+  internalpercepts_design;
   
-  %%% TO DO create the experimental phase design and then the experimental phase list
-  %% for now this has 2 x 4 x 4 dimensions == seen not seen x category x onset
-  %exp_phase_design = [1 1 1; 1 1 2; 1 1 3; 1 1 4; 1 2 1; 1 2 2; 1 2 3; 1 2 4; 1 3 1; 1 3 2; 1 3 3; 1 3 4; 1 4 1; 1 4 2; 1 4 3; 1 4 4; ...
-  %                    2 1 1; 2 1 2; 2 1 3; 2 1 4; 2 2 1; 2 2 2; 2 2 3; 2 2 4; 2 3 1; 2 3 2; 2 3 3; 2 3 4; 2 4 1; 2 4 2; 2 4 3; 2 4 4];
-   exp_phase_design = [1 1; 1 2; 1 3; 1 4; 2 1; 2 2; 2 3; 2 4];
-
-   exp_phase_design_rep = repmat(exp_phase_design, 3, 1);   
-
-   
-  exp_phase_list = {};
-  
-   for d = 1:numBlocks
-    
-    exp_phase_list{d} = [];
-      
-    exp_phase_list{d} = [exp_phase_list{d}; dt_randomize(exp_phase_design_rep)];
-      
-  end
-  
-
-
   %%%%%%%%%                                        %%%%%%%
   % Prepare a few final things before starting the trials%
   %%%%%%%%%                                        %%%%%%%   
