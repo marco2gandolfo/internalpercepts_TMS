@@ -1,1 +1,2 @@
 subjectID	set	memorisation	flip	block	visibility	category	rt	acc	catacc	keys	catkeys	catRTs
+P01	set1	memorisation_1	flip	block2	box 	2	0.000	0	0	0	0	0.000

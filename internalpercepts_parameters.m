@@ -1,7 +1,8 @@
   %%%%%%%%%                                               %%%%%%%%%%
   % Here we set some parameters that are relevant to the experiment% 
   %%%%%%%%%                                               %%%%%%%%%%
-  rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
+  %rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
+  rootDir = 'D:/Documents/Marco_Gandolfo/internalpercepts_TMS/';		% root directory for the experiment - Windows
 
   imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
   theFlips = char('flip', 'flop');                               % the orientations of the images, define matrix with strings, then pick one randomly

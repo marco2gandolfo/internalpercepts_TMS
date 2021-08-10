@@ -1,8 +1,6 @@
 
 %% Before the start of the experiment
 %addpath("E:\Users\MAGIC-0.1-beta\")
-
-clear all
 o = magventure('COM1'); 
 o.connect(); 
 [e, r]=o.getStatus();

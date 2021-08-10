@@ -1,4 +1,4 @@
-function internalpercepts_debug(subjID, whichset, memorisation)
+function internalpercepts_decomposed(subjID, whichset, memorisation, whichsoftware)
 % function internalpercepts_debug(subjID, set, memorisation)
 % subjID should be a string e.g. 'P101' % for convenience also add the TMS site with underscore - e.g. 'P101_LO'
 % whichset should be a string 'set1 or 'set2', 
@@ -14,13 +14,20 @@ try
   % A few lines you might need to edit in order to get underway
   %%%%%%%%%
   
-  rand('twister',sum(100*clock)); 								% use this to reset the random number generator in Octave
-  %rng('shuffle'); 												% use this to reset the random number generator in Matlab
+  if whichsoftware == 'octave'
+  rand('twister',sum(100*clock));% use this to reset the random number generator in Octave
+  else
+  rng('shuffle') % use this to reset the random number generator in Matlab
+  end
+  
   Screen('Preference', 'SkipSyncTests', 0); 						% set to 1 for debugging, 0 when doing real testing
   KbName('UnifyKeyNames');                                        % see help KbName for more details, basically tries to unify key codes across OS
   theKeyCodes = KbName({'a','s','d','f','UpArrow','DownArrow', 'space'});                                % get key codes for your keys that you want alternative
+  
+  if whichsoftware == 'octave'
   page_screen_output(0, 'local');								% use in Octave to stop less/more from catching text output to the workspace
-
+  end
+  
   %%%%%%%%%
   % This ugly block of code is about setting up the screens/windows, checking timing, etc.
   %%%%%%%%%
@@ -28,17 +35,17 @@ try
   scriptVersion = 1.3;											% record the version of this script that is running
   screens = Screen('Screens');									% how many screens do we have?
   screenNumber = max(screens);								% take the last one by default
-  #screenRect = [100 100 600 600];            %% uncomment this and next line for small screen for debugging
-  #[window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
+  %screenRect = [100 100 600 600];            %% uncomment this and next line for small screen for debugging
+  %[window, screenRect] = Screen('OpenWindow', 0, [127 127 127], screenRect);
 
   [window, screenRect] = Screen('OpenWindow', screenNumber, 0); 	% 0 == black background; also record the size of the screen in a Rect
   info = Screen('GetWindowInfo', window); 						% records some technical detail about screen and graphics card
-  #[ifi, nvalid, stddev] = Screen('GetFlipInterval', window, ...	% ifi is the duration of one screen refresh in sec (inter-frame interval)
-  #100, 0.01, 30);												% set up for very rigourous checking; results reported in next lines
+  %[ifi, nvalid, stddev] = Screen('GetFlipInterval', window, ...	% ifi is the duration of one screen refresh in sec (inter-frame interval)
+  %100, 0.01, 30);												% set up for very rigourous checking; results reported in next lines
   ifi = Screen('GetFlipInterval', window);
 
   fprintf('Refresh interval is %2.5f ms.', ifi*1000);
-  #fprintf('samples = %i, std = %2.5f ms\n', nvalid, stddev*1000); % reports the results of the ifi measurements to the workspace
+  %fprintf('samples = %i, std = %2.5f ms\n', nvalid, stddev*1000); % reports the results of the ifi measurements to the workspace
   HideCursor; 													% guess what
   ListenChar(2);                        % suppresses the output of key presses to the command window/editor; press Ctrl+C in event of a crash
   WaitSecs(1); 													% Give the display a moment to recover 
@@ -172,7 +179,6 @@ try
       Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
     images(b, memorisation_list{b}(t,1),memorisation_list{b}(t,2)), []); % 1st dimension is block, second dimension is full/box/foil 3rd dimension is the exemplar category 1-2-3-4
    [vbl imgOnset(t) fts(t,1) mis(t,1) beam(t,1)] = ...			% (keep track of lots of Flip output)
-      %% flip it after 
     Screen('Flip', window, vbl + (fixDur(randi(length(fixDur))) .* ifi)); %% flip image after a random duration of the cross
    
     %% draw texture of the mask
@@ -262,7 +268,9 @@ try
             catkeys{b}(t), ...
             catRTs{b}(t));
          
-         fflush(fout);    
+        if whichsoftware == 'octave'
+            fflush(fout);
+        end
      
     end
     
@@ -310,8 +318,8 @@ try
             [studykeyIsDown, studysecs, keyCodest] = KbCheck;
                    if studykeyIsDown
                      stoneKey = find(keyCodest);
-                     studyKeys(st) = stoneKey(1);
-                     stRTs(st) = GetSecs - studyimgOnset(st);
+                     studyKeys{b}(st) = stoneKey(1);
+                     stRTs{b}(st) = GetSecs - studyimgOnset(st);
                     break;
                   end
             
@@ -340,7 +348,6 @@ try
       Screen('DrawTexture', window, ...							% draw an image offscreen in the right location -- try "Screen DrawTexture?" in command window
       expimages(b, exp_phase_list{b}(et,1),exp_phase_list{b}(et,2)), []); % 1st dimension is block, second dimension is seen_not seen 3rd dimension is the exemplar category 1-2-3-4
       [vbl expimgOnset(et) fts(et,1) mis(et,1) beam(et,1)] = ...			% (keep track of lots of Flip output)
-      %% flip it after 
       Screen('Flip', window, vbl + (fixDur(randi(length(fixDur))) .* ifi)); %% flip image after a random duration of the cross
    
       %% draw texture of the mask
@@ -362,9 +369,8 @@ try
                                   'device', 'keyboard', ...
                                   'stepsize', 5, ...
                                   'scalalength', 0.77, ... 
-                              %    'responseKeys', [KbName('return') KbName('left_control') KbName('right_control')], ...
                                   'startposition', 'center', ...
-                                  'aborttime', 7, ... %% abort scale in 2 seconds, for debuggingc.
+                                  'aborttime', 7, ... 
                                   'range', 2);
 
      
