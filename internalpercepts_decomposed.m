@@ -141,7 +141,7 @@ try
 
 
   %% create all the labels for the future datafile, hopefully
-  fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n', ...	    % fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
+  fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n', ...	    % fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
       'subjectID', ...													                      % Header for the data output
       'set', ...
       'memorisation', ...
@@ -154,7 +154,10 @@ try
       'catacc', ...
       'keys', ...
       'catkeys', ...
-      'catRTs');
+      'catRTs', ...
+      'section', ...
+      'studyphasekey', ...
+      'studyphaseRT');
 
 
 
@@ -253,7 +256,7 @@ try
             catacc{b}(t)
       
           % Write out the data
-        fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%d\t%3.3f\t%d\t%d\t%d\t%d\t%3.3f\n', ...	% fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
+        fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%d\t%3.3f\t%d\t%d\t%d\t%d\t%3.3f\t%s\n', ...	% fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
             subjID, ...	          % the part in '' is encoded so that each %s, %d, %f is filled with a string, integer, or float from the remaining arguments
             whichset, ...
             memorisation, ... 
@@ -266,7 +269,8 @@ try
             catacc{b}(t), ...
             keys{b}(t), ...												                                % keycode of that trial (integer, %d)
             catkeys{b}(t), ...
-            catRTs{b}(t));
+            catRTs{b}(t), ...
+            'memtest_1');
          
         if whichsoftware == 'octave'
             fflush(fout);
@@ -322,13 +326,43 @@ try
                      stRTs{b}(st) = GetSecs - studyimgOnset(st);
                     break;
                   end
-            
          
           end
+        end %% end of trial ST
+        
+        % Write out the data
+        fprintf(fout, '%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%d\t%3.3f\n', ...	% fprintf is a powerful way to output formatted text https://www.cs.utah.edu/~germain/PPS/Topics/Matlab/fprintf.html
+            subjID, ...	          % the part in '' is encoded so that each %s, %d, %f is filled with a string, integer, or float from the remaining arguments
+            whichset, ...
+            memorisation, ... 
+            whichFlip, ...
+            sh_miniblocks(b,:), ...                                                     % whichblock -- string
+            memocondNames(studyphase_list{b}(st,1),:), ...								        % whichvisibility full box foil (string, %s) [all separated by tab characters \t]
+            studyphase_list{b}(st,2), ...								                      % category integer -- 1 - Person 2 - Furniture  3 - Car 4 - Animal 
+            0, ...													                                % response time of that trial (float, %3.3f, 3 digits before and after the decimal)
+            0, ...
+            0, ...
+            0, ...												                                % keycode of that trial (integer, %d)
+            0, ...
+            0, ...
+            'studyphase', ...
+            studyKeys{b}(st), ...
+            stRTs{b}(st));
+         
+        if whichsoftware == 'octave'
+            fflush(fout);
         end
-      
-      end
+        
+      end 
+            
     end
+    
+    %% if I am in the lab using matlab then load the stimulator just before the experimental phase, commented for now
+    %if whichsoftware == 'matlab'
+    %    [e,r]=o.arm();
+    %    o.setAmplitude(TMS_intensity);
+    %end 
+        
     
     for et = 1:size(exp_phase_list{b},1)
     

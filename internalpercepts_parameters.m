@@ -1,9 +1,18 @@
   %%%%%%%%%                                               %%%%%%%%%%
   % Here we set some parameters that are relevant to the experiment% 
   %%%%%%%%%                                               %%%%%%%%%%
-  %rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/';		% root directory for the experiment - Windows
-  rootDir = 'D:/Documents/Marco_Gandolfo/internalpercepts_TMS/';		% root directory for the experiment - Windows
+  if whichsoftware == 'octave'
+  rootDir = 'C:/Users/uomom/Documents/internalpercepts_TMS/'; % root directory for the experiment - Windows
+  else
+  rootDir = 'D:/Documents/Marco_Gandolfo/internalpercepts_TMS/';		% root directory for the experiment in the lab - Windows
+  %% set connection for TMS Commented for now
+  %o = magventure('COM1');
+  %o.connect();
+  %[e, r]=o.getStatus();
+  %o.setTrain(25,2,1,1);
 
+  end
+  
   imageDir = [rootDir whichset '/']; 								% the folder where we keep the images
   theFlips = char('flip', 'flop');                               % the orientations of the images, define matrix with strings, then pick one randomly
   whichFlip = theFlips(randi([1 2]),:);                           % pick either flip or flop

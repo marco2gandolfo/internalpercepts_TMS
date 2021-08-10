@@ -1,0 +1,14 @@
+subjectID	set	memorisation	flip	block	visibility	category	rt	acc	catacc	keys	catkeys	catRTs	section	studyphasekey	studyphaseRT
+EMME	set1	memorisation_1	flop	block5	full	1	0.814	0	0	65	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	full	3	0.870	1	1	38	68	1.109	memtest_1
+EMME	set1	memorisation_1	flop	block5	box 	1	0.724	1	0	40	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	box 	4	0.632	0	0	38	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	foil	1	0.651	1	1	38	65	1.093	memtest_1
+EMME	set1	memorisation_1	flop	block5	full	4	0.819	1	1	38	70	0.972	memtest_1
+EMME	set1	memorisation_1	flop	block5	full	2	0.855	0	0	40	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	box 	3	1.188	0	0	38	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	foil	2	0.708	1	0	38	68	1.316	memtest_1
+EMME	set1	memorisation_1	flop	block5	foil	4	0.772	0	0	40	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	box 	2	0.667	1	0	40	0	0.000	memtest_1
+EMME	set1	memorisation_1	flop	block5	foil	3	0.593	1	1	38	68	1.579	memtest_1
+EMME	set1	memorisation_1	flop	block5	box 	1	0	0	0	0	0	0	studyphase	32	0.000

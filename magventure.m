@@ -20,8 +20,8 @@ classdef magventure < handle
            
             %% Find All Available etISerial Ports On Your Computer
             
-            FoundPorts = instrhwinfo('serial');
-            ListOfComPorts = FoundPorts.AvailableSerialPorts;
+          %  FoundPorts = instrhwinfo('serial');
+          %  ListOfComPorts = FoundPorts.AvailableSerialPorts;
             
             %% Check Input Validity:
             if nargin <1
@@ -30,9 +30,9 @@ classdef magventure < handle
             if ~(ischar(PortID))
                 error('The Serial Port ID Must Be a Character Array');
             end
-            if ~any(strcmp(ListOfComPorts,PortID)) 
-                error('Invalid Serial Com Port ID');
-            end
+            %if ~any(strcmp(ListOfComPorts,PortID)) 
+            %    error('Invalid Serial Com Port ID');
+            %end
             
             %% Identifing The Port
             P = serial(PortID);

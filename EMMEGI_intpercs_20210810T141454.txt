@@ -1,0 +1,25 @@
+subjectID	set	memorisation	flip	block	visibility	category	rt	acc	catacc	keys	catkeys	catRTs	section	studyphasekey	studyphaseRT
+EMMEGI	set1	memorisation_1	flop	block1	full	4	1.445	1	0	38	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	box 	3	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	full	3	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	box 	4	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	full	1	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	full	2	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	foil	3	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	foil	2	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	foil	4	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	box 	2	1.202	1	0	40	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	foil	1	0.511	1	1	38	65	1.469	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	box 	1	0.000	0	0	0	0	0.000	memtest_1
+EMMEGI	set1	memorisation_1	flop	block1	box 	4	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	full	3	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	full	4	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	foil	2	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	full	1	0	0	0	0	0	0	studyphase	0	0.000
+EMMEGI	set1	memorisation_1	flop	block1	foil	3	0	0	0	0	0	0	studyphase	0	0.000
+EMMEGI	set1	memorisation_1	flop	block1	box 	2	0	0	0	0	0	0	studyphase	32	0.001
+EMMEGI	set1	memorisation_1	flop	block1	foil	1	0	0	0	0	0	0	studyphase	0	0.000
+EMMEGI	set1	memorisation_1	flop	block1	full	2	0	0	0	0	0	0	studyphase	0	0.000
+EMMEGI	set1	memorisation_1	flop	block1	box 	3	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	box 	1	0	0	0	0	0	0	studyphase	32	0.000
+EMMEGI	set1	memorisation_1	flop	block1	foil	4	0	0	0	0	0	0	studyphase	0	0.000
