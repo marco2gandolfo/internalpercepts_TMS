@@ -5,10 +5,10 @@ clear; %remove all variables from previous times
 Screen('Preference', 'SkipSyncTests', 0); %some standard test for the screen
 KbName('UnifyKeyNames');
 TOOC_variables; %load all variables
-o = magventure('COM1');
-o.connect();
-[e, r]=o.getStatus();
-o.setTrain(25,2,1,1);
+o = magventure('COM1'); %% set the port for TMS
+o.connect(); %% activate it
+[e, r]=o.getStatus(); %% get staturs
+o.setTrain(25,2,1,1); %%  %a pulse train of 25 Hz, 2 pulses, 1 repetition, 1 second between repetitions (irrelevant here)
 
 
 %% Login prompt and open file for writing data out
@@ -37,6 +37,7 @@ Screen('FillRect', mainwin, bgcolor);
 center = [screenrect(3)/2 screenrect(4)/2];
 Screen(mainwin, 'Flip');
 
+%% num stim is defined in the tooc_variables
 stimulus = cell(1,Num_Stim); %here an empty cell is created, which makes it more time efficient
 stimulus{1,Num_Stim} = [];
 im_stim = cell(1,Num_Stim); %same here
@@ -84,8 +85,8 @@ while 1
     end
 end
 
-[e,r]=o.arm();
-o.setAmplitude(TMS_intensity);
+[e,r]=o.arm(); %%% at this stage we arm the TMS - ready to deliver pulses
+o.setAmplitude(TMS_intensity); %%% set the intensity this variable is in the file TOOC_variables
 
 %% present stimuli
 for i = 1:Num_Stim
